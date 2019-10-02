@@ -105,5 +105,13 @@ write.csv(Landing_quarter, "Landing_quarter.csv")
 write.csv(LFD_campbiol, "LFD_campbiol.csv")
 
 warnings()
+dataset <- read_csv("~/CNR/Stock Assessment/2019/csv_plot/LFD_campbiol.csv")
+
+
+head(dataset)
+data<-dataset%>%dplyr::filter(LO01_PORTO=="Ancona")
+df<-data%>%dplyr::group_by(anno,LO01_TIPO_OSSERVAZIONE,classe_lun)%>%summarize(n=sum(n_land))
+ggplot(df, mapping=aes(x=classe_lun, y= n, fill=LO01_TIPO_OSSERVAZIONE))+geom_col()+facet_wrap(~anno)+geom_vline(aes(xintercept = dens_peak) , color=~LO01_TIPO_OSSERVAZIONE)
+
 
 
