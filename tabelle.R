@@ -119,6 +119,59 @@ tab_1[is.na(tab_1)] <- 0
 tab_1$Attrezzo<-ifelse(grepl("Reti", tab_1$Attrezzo), "Reti_posta", tab_1$Attrezzo)
 tab_LFD_porto<-tab_1 %>%  dplyr::arrange(Attrezzo, Anno, Trimestre)
 
+
+######################## LFD discard per quarter
+C3 <- read_excel("C3.xlsx") ### C3 discard solo per trimestri
+names(C3)[7]<-paste("alpha_code") 
+names(C3)[8]<-paste("classe_lun") 
+names(C3)[11]<-paste("Numero_espanso") 
+names(C3)[18]<-paste("Attrezzo") 
+dataset<-C3 %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
+### tabella per lfd
+dataset<- dataset %>%dplyr::select(Anno, Trimestre, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+#ATTENZIONEEEEEE  bin diversi da LFD commerciale (più piccoli) attenzione nel riportarlo in SS3
+bin<-as.data.frame(seq(min(dataset$classe_lun)-1,max(dataset$classe_lun), by=par)) 
+names(bin)<-paste("bin")
+dataset$bin<-rep(0, nrow(dataset))
+for (i in 1:nrow(dataset)) {  
+  if(is.na(match(dataset$classe_lun[i], bin$bin))==F){
+    dataset$bin[i]<-dataset$classe_lun[i]
+  } else {
+    dataset$bin[i]<-bin$bin[which(bin$bin %between% c(dataset$classe_lun[i]-(par), dataset$classe_lun[i])==T)]
+  }
+}
+tab_1<-dataset %>% dplyr::select(-classe_lun) %>% dplyr::group_by(Anno, Trimestre, Attrezzo, bin)%>%dplyr::summarize(num=sum(Numero_espanso))%>%dplyr::distinct(Anno, Trimestre, Attrezzo, bin, num)%>% tidyr::spread(., bin, num)%>% arrange(Attrezzo, Anno, Trimestre) 
+tab_1[is.na(tab_1)] <- 0
+tab_1$Attrezzo<-ifelse(grepl("Reti", tab_1$Attrezzo), "Reti_posta", tab_1$Attrezzo)
+tab_LFD_discardQ<-tab_1 #tabella discard per quarter, mancano gli Nsamp perchè ancora non ho capito quale numero considerare
+
+
+
+####################### LFD discard annuale
+C8S <- read_excel("C8 S.xls") ### C1 solo per trimestri
+names(C8S)<-str_replace(names(C8S), " ", "_")
+names(C8S)[6]<-paste("alpha_code") ### verificare sia la colonna giusta
+names(C8S)[8]<-paste("classe_lun") 
+dataset<-C8S %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
+dataset$Attrezzo<-ifelse(grepl("OTB", dataset$Codice_Metier), "Strascico", ifelse(grepl("TBB", dataset$Codice_Metier) , "Rapido", ifelse(grepl("GNS", dataset$Codice_Metier) , "Reti_posta",ifelse( grepl("FPO", dataset$Codice_Metier), "Nasse", ifelse(grepl("GTR", dataset$Codice_Metier) ,"Tremaglio", ifelse(grepl("PTM", dataset$Codice_Metier),"Volante","Other" ))))))
+dataset<- dataset %>%dplyr::select(Anno, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+dataset$bin<-rep(0, nrow(dataset))
+for (i in 1:nrow(dataset)) {  
+  if(is.na(match(dataset$classe_lun[i], bin$bin))==F){
+    dataset$bin[i]<-dataset$classe_lun[i]
+  } else {
+    dataset$bin[i]<-bin$bin[which(bin$bin %between% c(dataset$classe_lun[i]-(par), dataset$classe_lun[i])==T)]
+  }
+}
+dataset<-dataset %>% dplyr::select(-classe_lun) %>% dplyr::group_by(Anno, Attrezzo, bin)%>%dplyr::summarize(num=sum(Numero_espanso))%>%dplyr::distinct(Anno, Attrezzo, bin, num)%>% tidyr::spread(., bin, num)%>% arrange(Attrezzo, Anno) 
+dataset[is.na(dataset)] <- 0
+dataset$Attrezzo<-ifelse(grepl("Reti", dataset$Attrezzo), "Reti_posta", dataset$Attrezzo)
+tab_LFD_discardY<-dataset #tabella discard per anno, mancano gli Nsamp perchè ancora non ho capito quale numero considerare
+#ATTENZIONEEEEEE stesso discorso di sopra: bin diversi da LFD commerciale (più piccoli) attenzione nel riportarlo in SS3
+
+
+
+
 ###########
 setwd("~/CNR/Stock Assessment/2019/csv_plot")
 write.csv(tab_LFD_quarter, "LFD_quarter.csv")
@@ -126,6 +179,8 @@ write.csv(tab_LFD_year, "LFD_year.csv")
 write.csv(Landing_year, "Landing_year.csv")
 write.csv(Landing_quarter, "Landing_quarter.csv")
 write.csv(LFD_campbiol, "LFD_campbiol.csv")
+write.csv(tab_LFD_discardQ, "LFD_discard_quarter.csv")
+write.csv(tab_LFD_discardY, "LFD_discard_year.csv")
 
 warnings()
 dataset <- read_csv("~/CNR/Stock Assessment/2019/csv_plot/LFD_campbiol.csv")
