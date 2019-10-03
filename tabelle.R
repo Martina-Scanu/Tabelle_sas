@@ -96,6 +96,29 @@ names(C7)[11]<-paste("classe_lun")
 dataset<-C7%>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
 LFD_campbiol<-dataset%>% inner_join(., logbook, by=c("DATA", "LO01_ID"))%>% dplyr::select(anno,GSA,LO01_TIPO_OSSERVAZIONE, LO01_ID, LO01_TRIMESTRE, LO01_ATTREZZO.x, classe_lun, n_land, alpha_code, LO01_PORTO) %>% tidyr::drop_na()
 
+names(LFD_campbiol)[1]<-paste("Anno")
+names(LFD_campbiol)[3]<-paste("TIPO_OSSERVAZIONE")
+names(LFD_campbiol)[5]<-paste("Trimestre")
+names(LFD_campbiol)[6]<-paste("Attrezzo")
+LFD_campbiol<- LFD_campbiol %>%dplyr::select(Anno, Trimestre, n_land, classe_lun, Attrezzo) %>% tidyr::drop_na()
+bin<-as.data.frame(seq(min(LFD_campbiol$classe_lun),max(LFD_campbiol$classe_lun), by=par))
+names(bin)<-paste("bin")
+LFD_campbiol$bin<-rep(0, nrow(LFD_campbiol))
+for (i in 1:nrow(LFD_campbiol)) {  
+  if(is.na(match(LFD_campbiol$classe_lun[i], bin$bin))==F){
+    LFD_campbiol$bin[i]<-LFD_campbiol$classe_lun[i]
+  } else {
+    LFD_campbiol$bin[i]<-bin$bin[which(bin$bin %between% c(LFD_campbiol$classe_lun[i]-(par), LFD_campbiol$classe_lun[i])==T)]
+  }
+  # 2. sequence
+  #output[[i]] <- median(df[[i]])      # 3. body
+  #print("dataset")
+}
+tab_1<-LFD_campbiol %>% dplyr::select(-classe_lun) %>% dplyr::group_by(Anno, Trimestre, Attrezzo, bin)%>%dplyr::summarize(num=sum(n_land))%>%dplyr::distinct(Anno, Trimestre, Attrezzo, bin, num)%>% tidyr::spread(., bin, num)%>% arrange(Attrezzo, Anno, Trimestre) 
+tab_1[is.na(tab_1)] <- 0
+tab_1$Attrezzo<-ifelse(grepl("Reti", tab_1$Attrezzo), "Reti_posta", tab_1$Attrezzo)
+tab_LFD_porto<-tab_1 %>%  dplyr::arrange(Attrezzo, Anno, Trimestre)
+
 ###########
 setwd("~/CNR/Stock Assessment/2019/csv_plot")
 write.csv(tab_LFD_quarter, "LFD_quarter.csv")
