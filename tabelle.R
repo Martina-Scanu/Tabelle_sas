@@ -27,6 +27,9 @@ tab_samp$Attrezzo<-ifelse(grepl("OTB", tab_samp$Codice_Metier), "Strascico", ife
 n_samp<-tab_samp %>% dplyr::distinct(Attrezzo, DATA, .keep_all=T)%>% dplyr::group_by(Attrezzo, Anno, Trimestre) %>%dplyr::count(Trimestre) %>% dplyr::filter(Attrezzo != "Volante")
 ### tabella per lfd
 dataset<- dataset %>%dplyr::select(Anno, Trimestre, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+# tabella per fare eventuali plot in R
+plot_LFD_quarter <- dataset
+##########################
 bin<-as.data.frame(seq(min(dataset$classe_lun),max(dataset$classe_lun), by=par))
 names(bin)<-paste("bin")
 dataset$bin<-rep(0, nrow(dataset))
@@ -58,6 +61,9 @@ n_samp_ann<-n_samp %>% dplyr::group_by(Attrezzo, Anno) %>% dplyr::mutate(n_sam =
 dataset<-C8 %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
 dataset$Attrezzo<-ifelse(grepl("OTB", dataset$Codice_Metier), "Strascico", ifelse(grepl("TBB", dataset$Codice_Metier) , "Rapido", ifelse(grepl("GNS", dataset$Codice_Metier) , "Reti_posta",ifelse( grepl("FPO", dataset$Codice_Metier), "Nasse", ifelse(grepl("GTR", dataset$Codice_Metier) ,"Tremaglio", ifelse(grepl("PTM", dataset$Codice_Metier),"Volante","Other" ))))))
 dataset<- dataset %>%dplyr::select(Anno, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+# tabella per fare eventuali plot in R
+plot_LFD_year <- dataset
+##########################
 dataset$bin<-rep(0, nrow(dataset))
 for (i in 1:nrow(dataset)) {  
   if(is.na(match(dataset$classe_lun[i], bin$bin))==F){
@@ -156,6 +162,9 @@ names(C8S)[8]<-paste("classe_lun")
 dataset<-C8S %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
 dataset$Attrezzo<-ifelse(grepl("OTB", dataset$Codice_Metier), "Strascico", ifelse(grepl("TBB", dataset$Codice_Metier) , "Rapido", ifelse(grepl("GNS", dataset$Codice_Metier) , "Reti_posta",ifelse( grepl("FPO", dataset$Codice_Metier), "Nasse", ifelse(grepl("GTR", dataset$Codice_Metier) ,"Tremaglio", ifelse(grepl("PTM", dataset$Codice_Metier),"Volante","Other" ))))))
 dataset<- dataset %>%dplyr::select(Anno, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+# tabella per fare eventuali plot in R
+plot_LFD_discard_year <- dataset
+####################################
 dataset$bin<-rep(0, nrow(dataset))
 for (i in 1:nrow(dataset)) {  
   if(is.na(match(dataset$classe_lun[i], bin$bin))==F){
@@ -182,8 +191,12 @@ write.csv(Landing_quarter, "Landing_quarter.csv")
 write.csv(LFD_campbiol, "LFD_campbiol.csv")
 write.csv(tab_LFD_discardQ, "LFD_discard_quarter.csv")
 write.csv(tab_LFD_discardY, "LFD_discard_year.csv")
+# csv per plot in R
+write.csv(plot_LFD_quarter, "plot_LFD_quarter.csv")
+write.csv(plot_LFD_year, "plot_LFD_year.csv")
+write.csv(plot_LFD_discard_year, "plot_LFD_discard_year.csv")
 
-warnings()
+
 dataset <- read_csv("~/CNR/Stock Assessment/2019/csv_plot/LFD_campbiol.csv")
 
 
