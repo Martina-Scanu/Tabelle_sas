@@ -8,6 +8,7 @@ area<-"17" #GSA
 par<-2 ## ampiezza bin
 ####
 setwd("~/CNR/Stock Assessment/2019/Michela tabelle 19-22 luglio 2019/File_catture") ### file LFD
+#setwd("C:/Users/m.scanu/Desktop/Lavoro/ISMAR/DCF/Michela tabelle 19-22 luglio 2019")
 ######################## LFD per quarter
 C1 <- read_excel("C1.xlsx") ### C1 solo per trimestri
 names(C1)<-str_replace(names(C1), " ", "_")
@@ -175,6 +176,7 @@ tab_LFD_discardY<-dataset #tabella discard per anno, mancano gli Nsamp perchè a
 
 ###########
 setwd("~/CNR/Stock Assessment/2019/csv_plot")
+#setwd("C:/Users/m.scanu/Desktop/Lavoro/ISMAR/ss3/Data/Tabelle per costruire dataset SS3")
 write.csv(tab_LFD_quarter, "LFD_quarter.csv")
 write.csv(tab_LFD_year, "LFD_year.csv")
 write.csv(Landing_year, "Landing_year.csv")
