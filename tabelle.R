@@ -8,6 +8,7 @@ area<-"17" #GSA
 par<-2 ## ampiezza bin
 ####
 setwd("~/CNR/Stock Assessment/2019/Michela tabelle 19-22 luglio 2019/File_catture") ### file LFD
+#setwd("C:/Users/m.scanu/Desktop/Lavoro/ISMAR/DCF/Michela tabelle 19-22 luglio 2019")
 ######################## LFD per quarter
 C1 <- read_excel("C1.xlsx") ### C1 solo per trimestri
 names(C1)<-str_replace(names(C1), " ", "_")
