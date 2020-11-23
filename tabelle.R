@@ -115,3 +115,54 @@ ggplot(df, mapping=aes(x=classe_lun, y= n, fill=LO01_TIPO_OSSERVAZIONE))+geom_co
 
 
 
+############PER LAVORARE CON TABELLE 2019####################
+library(readxl)
+library(tidyverse)
+library(data.table)
+##
+###### select species and area
+specie<- "MTS" #FAO alpha code
+area<-"17" #GSA
+par<-2 ## ampiezza bin
+####
+setwd("~/CNR/Stock Assessment/2019/Michela tabelle 19-22 luglio 2019/File_catture") ### file LFD
+######################## LFD per quarter
+C1 <- read_excel("C1.xlsx") ### C1 solo per trimestri
+names(C1)<-str_replace(names(C1), " ", "_")
+names(C1)[7]<-paste("alpha_code") ### verificare sia la colonna giusta
+names(C1)[9]<-paste("classe_lun") 
+C6 <- read_excel("c 06 temp.xlsx") ### file nsamp
+names(C6)<-str_replace(names(C6), " ", "_")
+names(C6)[14]<-paste("alpha_code")
+names(C6)[2]<-paste("GSA")
+names(C6)[1]<-paste("Anno")
+names(C6)[8]<-paste("Trimestre")
+######## filtri per area, specie ecc
+dataset<-C1 %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
+tab_samp<-C6  %>% dplyr::filter(alpha_code ==specie) %>% dplyr::filter(GSA == area)
+##### calcolo n samp
+tab_samp$Attrezzo<-ifelse(grepl("OTB", tab_samp$Codice_Metier), "Strascico", ifelse(grepl("TBB", tab_samp$Codice_Metier) , "Rapido", ifelse(grepl("GNS", tab_samp$Codice_Metier) , "Reti_posta",ifelse( grepl("FPO", tab_samp$Codice_Metier), "Nasse", ifelse(grepl("GTR", tab_samp$Codice_Metier) ,"Tremaglio", ifelse(grepl("PTM", tab_samp$Codice_Metier),"Volante","Other" ))))))
+n_samp<-tab_samp %>% dplyr::distinct(Attrezzo, DATA, .keep_all=T)%>% dplyr::group_by(Attrezzo, Anno, Trimestre) %>%dplyr::count(Trimestre) %>% dplyr::filter(Attrezzo != "Volante")
+### tabella per lfd
+names(dataset)<-str_replace(names(dataset), " ", "_")
+dataset<- dataset %>%dplyr::select(Anno, Trimestre, Numero_espanso, classe_lun, Attrezzo) %>% tidyr::drop_na()
+bin<-as.data.frame(seq(min(dataset$classe_lun),max(dataset$classe_lun), by=par))
+names(bin)<-paste("bin")
+dataset$bin<-rep(0, nrow(dataset))
+for (i in 1:nrow(dataset)) {  
+  if(is.na(match(dataset$classe_lun[i], bin$bin))==F){
+    dataset$bin[i]<-dataset$classe_lun[i]
+  } else {
+    dataset$bin[i]<-bin$bin[which(bin$bin %between% c(dataset$classe_lun[i]-(par), dataset$classe_lun[i])==T)]
+  }
+  # 2. sequence
+  #output[[i]] <- median(df[[i]])      # 3. body
+  #print("dataset")
+}
+tab_1<-dataset %>% dplyr::select(-classe_lun) %>% dplyr::group_by(Anno, Trimestre, Attrezzo, bin)%>%dplyr::summarize(num=sum(Numero_espanso))%>%dplyr::distinct(Anno, Trimestre, Attrezzo, bin, num)%>% tidyr::spread(., bin, num)%>% arrange(Attrezzo, Anno, Trimestre) 
+tab_1[is.na(tab_1)] <- 0
+tab_1$Attrezzo<-ifelse(grepl("Reti", tab_1$Attrezzo), "Reti_posta", tab_1$Attrezzo)
+tab_LFD_quarter<-tab_1 %>% dplyr::inner_join(., n_samp, by=c("Anno", "Trimestre", "Attrezzo")) %>% dplyr::arrange(Attrezzo, Anno, Trimestre)
+tab_LFD_quarter<-tab_LFD_quarter[, c(1:3, ncol(tab_LFD_quarter), 4:ncol(tab_LFD_quarter)-1)]  ### serve a mettere n samp al posto giusto, modificare in base alle dimensioni del df
+
+
